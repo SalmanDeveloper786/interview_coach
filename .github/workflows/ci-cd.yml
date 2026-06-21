@@ -1,0 +1,30 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Pull latest and Deploy
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/interview_coach
+            # Discard any local modifications and pull latest main
+            git fetch --all
+            git reset --hard origin/main
+            
+            # Restart the Docker containers with the new code
+            sudo docker compose up --build -d
+            
+            # Clean up dangling images to save disk space
+            sudo docker image prune -f
