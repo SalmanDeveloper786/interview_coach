@@ -20,8 +20,8 @@ jobs:
           script: |
             cd /home/ubuntu/interview_coach
             # Discard any local modifications and pull latest main
-            git fetch --all
-            git reset --hard origin/main
+            sudo git fetch --all
+            sudo git reset --hard origin/main
             
             # Restart the Docker containers with the new code
             sudo docker compose up --build -d
