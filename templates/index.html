@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interview Coach AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Lucide icons for clean, modern iconography -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="glass-nav">
+        <div class="nav-content">
+            <div class="logo">
+                <i data-lucide="brain-circuit"></i>
+                <span>Interview Coach</span>
+            </div>
+            <div class="user-actions">
+                <span class="user-email">{{ user }}</span>
+                <a href="/logout" class="btn-logout"><i data-lucide="log-out"></i> Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Control Panel -->
+        <section class="control-panel">
+            <div class="status-indicator">
+                <div class="pulse-ring" id="recording-pulse"></div>
+                <span id="status-text">Ready to Listen</span>
+                <div class="volume-meter-container" id="volume-meter-container" style="display: none; width: 60px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-left: 10px;">
+                    <div id="volume-meter" style="width: 0%; height: 100%; background: var(--success); transition: width 0.1s, background-color 0.2s;"></div>
+                </div>
+            </div>
+            <button id="toggle-listen-btn" class="btn-primary">
+                <i data-lucide="mic"></i>
+                <span id="btn-text">Start Listening</span>
+            </button>
+        </section>
+
+        <!-- Transcription Area -->
+        <section class="transcription-container glass-panel">
+            <div class="panel-header">
+                <i data-lucide="message-square"></i>
+                <h2>Transcribed Question</h2>
+            </div>
+            <div class="transcription-box" id="transcription-box">
+                <p class="placeholder-text">The interviewer's transcribed speech will appear here...</p>
+                <div id="interim-text" class="interim"></div>
+            </div>
+        </section>
+
+        <!-- AI Suggestion Area -->
+        <section class="suggestion-container glass-panel highlight-panel">
+            <div class="panel-header suggestion-header">
+                <div class="title-wrap">
+                    <i data-lucide="zap"></i>
+                    <h2>Suggested Answer</h2>
+                </div>
+                <div class="processing-indicator" id="processing-indicator">
+                    <div class="dot-typing"></div>
+                    <span>AI Processing...</span>
+                </div>
+            </div>
+            <div class="suggestion-box" id="suggestion-box">
+                <p class="placeholder-text">AI recommendations will stream here in real-time...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Background glow effects -->
+    <div class="bg-glow glow-1"></div>
+    <div class="bg-glow glow-2"></div>
+
+    <script src="/static/app.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
