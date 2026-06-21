@@ -37,6 +37,160 @@ body {
     line-height: 1.6;
 }
 
+/* Cinematic Reveal Animations */
+.reveal-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--bg-base);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.5s ease 1s; /* fade out after animation finishes */
+}
+
+.mic-split-container {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+.mic-half {
+    position: absolute;
+    top: 0;
+    width: 80px;
+    height: 80px;
+    color: var(--text-primary);
+    transition: transform 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+    will-change: transform;
+    pointer-events: none; /* Ignore clicks on halves, container handles it */
+}
+
+.mic-half.left {
+    left: 0;
+    clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);
+    filter: drop-shadow(-5px 0 15px rgba(59, 130, 246, 0.4));
+}
+
+.mic-half.right {
+    left: 0;
+    clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%);
+    filter: drop-shadow(5px 0 15px rgba(139, 92, 246, 0.4));
+}
+
+.mic-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, rgba(96, 165, 250, 0.3) 0%, rgba(0,0,0,0) 70%);
+    border-radius: 50%;
+    z-index: -1;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    animation: mic-pulse 2s infinite alternate;
+}
+
+@keyframes mic-pulse {
+    from { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+    to { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+}
+
+/* Active Animation States */
+.reveal-wrapper.active-reveal .mic-half.left {
+    transform: translateX(-50vw);
+}
+
+.reveal-wrapper.active-reveal .mic-half.right {
+    transform: translateX(50vw);
+}
+
+.reveal-wrapper.active-reveal .mic-glow,
+.reveal-wrapper.active-reveal .enter-hint {
+    opacity: 0;
+}
+
+/* Particle System */
+#particle-zone {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    overflow: visible;
+    z-index: 998;
+}
+
+.particle {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: var(--primary);
+    border-radius: 50%;
+    top: 0;
+    left: 0;
+    opacity: 1;
+    /* CSS Vars assigned via JS */
+    transform: translate3d(0, 0, 0);
+    transition: transform 1.5s cubic-bezier(0.1, 1, 0.2, 1), opacity 1.5s ease-out;
+    will-change: transform, opacity;
+}
+
+.particle.pop {
+    transform: translate3d(var(--tx), var(--ty), 0) scale(var(--s));
+    opacity: 0;
+}
+
+/* Dashboard Entry State */
+.dashboard-wrapper {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    height: 100%;
+    transition: opacity 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+    will-change: opacity;
+}
+
+.dashboard-wrapper.hidden-initial {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.dashboard-wrapper.active-reveal {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Smooth child entry animations */
+.dashboard-wrapper .glass-nav,
+.dashboard-wrapper .container {
+    transition: transform 1.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 1.5s ease;
+}
+
+.dashboard-wrapper.hidden-initial .glass-nav {
+    transform: translateY(-20px);
+    opacity: 0;
+}
+
+.dashboard-wrapper.hidden-initial .container {
+    transform: translateY(20px);
+    opacity: 0;
+}
+
+.dashboard-wrapper.active-reveal .glass-nav,
+.dashboard-wrapper.active-reveal .container {
+    transform: translateY(0);
+    opacity: 1;
+}
+
 /* Background Effects */
 .bg-glow {
     position: fixed;
@@ -44,6 +198,12 @@ body {
     filter: blur(120px);
     z-index: -1;
     opacity: 0.5;
+    animation: ambient-drift 20s infinite alternate ease-in-out;
+}
+
+@keyframes ambient-drift {
+    0% { transform: translate3d(0, 0, 0) scale(1); }
+    100% { transform: translate3d(5vw, 5vh, 0) scale(1.1); }
 }
 
 .glow-1 {
@@ -60,6 +220,7 @@ body {
     width: 60vw;
     height: 60vw;
     background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, rgba(15,23,42,0) 70%);
+    animation-delay: -10s;
 }
 
 /* Navigation */
@@ -275,7 +436,7 @@ body {
     100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 
-.btn-primary {
+.btn-listen {
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -288,30 +449,44 @@ body {
     font-weight: 600;
     font-size: 1rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     box-shadow: 0 0 20px var(--primary-glow);
 }
 
-.btn-primary:hover {
+.btn-listen:hover {
     background: var(--primary-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 0 25px var(--primary-glow);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 25px var(--primary-glow);
 }
 
-.btn-primary.listening {
+.btn-listen:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 10px var(--primary-glow);
+}
+
+.btn-listen.is-listening {
     background: var(--danger);
-    box-shadow: 0 0 20px var(--danger-glow);
+    box-shadow: 0 0 0 rgba(239, 68, 68, 0.7);
+    animation: radiate-ripple 1.5s infinite;
 }
 
-.btn-primary.listening:hover {
-    background: #dc2626;
+@keyframes radiate-ripple {
+    0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+    }
+    70% {
+        box-shadow: 0 0 0 15px rgba(239, 68, 68, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
 }
 
 /* Text Areas */
 .transcription-box, .suggestion-box {
     flex-grow: 1;
     overflow-y: auto;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     padding-right: 0.5rem;
 }
 
@@ -325,12 +500,25 @@ body {
 }
 
 .suggestion-box {
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     font-weight: 400;
     line-height: 1.6;
     letter-spacing: -0.01em;
     color: #fff;
     text-shadow: 0 1px 5px rgba(0,0,0,0.5);
+}
+
+/* Streaming Terminal Cursor */
+.streaming-text::after {
+    content: '▊';
+    margin-left: 4px;
+    color: #a78bfa;
+    animation: cursor-blink 1s step-end infinite;
+}
+
+@keyframes cursor-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
 }
 
 .placeholder-text {

@@ -10,7 +10,34 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
-    <!-- Top Navigation Bar -->
+    <!-- Cinematic Loader Overlay -->
+    <div id="reveal-screen" class="reveal-wrapper">
+        <div class="mic-split-container" id="enter-trigger" title="Click to Initialize">
+            <!-- Left Half of Mic -->
+            <div class="mic-half left">
+                <svg viewBox="0 0 24 24" width="80" height="80" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 3 3" />
+                    <path d="M19 10v2a7 7 0 0 1-7 7" />
+                    <line x1="12" y1="19" x2="12" y2="22" />
+                    <line x1="8" y1="22" x2="12" y2="22" />
+                </svg>
+            </div>
+            <!-- Right Half of Mic -->
+            <div class="mic-half right">
+                <svg viewBox="0 0 24 24" width="80" height="80" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 5v7a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3" />
+                    <path d="M12 19a7 7 0 0 0 7-7v-2" />
+                    <line x1="12" y1="22" x2="16" y2="22" />
+                </svg>
+            </div>
+            <div id="particle-zone"></div>
+            <div class="mic-glow"></div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Application -->
+    <div id="dashboard-wrapper" class="dashboard-wrapper hidden-initial">
+        <!-- Top Navigation Bar -->
     <nav class="glass-nav">
         <div class="nav-content">
             <div class="logo">
@@ -28,13 +55,11 @@
         <!-- Control Panel -->
         <section class="control-panel">
             <div class="status-indicator">
-                <div class="pulse-ring" id="recording-pulse"></div>
+                <canvas id="audio-meter" width="40" height="20" style="display: none; margin-right: 8px;"></canvas>
+                <div class="pulse-ring" id="recording-pulse" style="display: none;"></div>
                 <span id="status-text">Ready to Listen</span>
-                <div class="volume-meter-container" id="volume-meter-container" style="display: none; width: 60px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-left: 10px;">
-                    <div id="volume-meter" style="width: 0%; height: 100%; background: var(--success); transition: width 0.1s, background-color 0.2s;"></div>
-                </div>
             </div>
-            <button id="toggle-listen-btn" class="btn-primary">
+            <button id="toggle-listen-btn" class="btn-listen btn-primary">
                 <i data-lucide="mic"></i>
                 <span id="btn-text">Start Listening</span>
             </button>
@@ -48,7 +73,6 @@
             </div>
             <div class="transcription-box" id="transcription-box">
                 <p class="placeholder-text">The interviewer's transcribed speech will appear here...</p>
-                <div id="interim-text" class="interim"></div>
             </div>
         </section>
 
@@ -69,6 +93,7 @@
             </div>
         </section>
     </main>
+    </div> <!-- /dashboard-wrapper -->
 
     <!-- Background glow effects -->
     <div class="bg-glow glow-1"></div>

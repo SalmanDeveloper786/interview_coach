@@ -5,10 +5,60 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusText = document.getElementById('statusText') || document.getElementById('status-text');
     const recordingPulse = document.getElementById('recordingPulse') || document.getElementById('recording-pulse');
     const transcriptionBox = document.getElementById('transcriptionBox') || document.getElementById('transcription-box');
-    const interimTextDiv = document.getElementById('interimText') || document.getElementById('interim-text');
     const suggestionBox = document.getElementById('suggestionBox') || document.getElementById('suggestion-box');
     const processingIndicator = document.getElementById('processingIndicator') || document.getElementById('processing-indicator');
     const micIcon = toggleListenBtn.querySelector('i');
+
+    // Cinematic Reveal Elements
+    const enterTrigger = document.getElementById('enter-trigger');
+    const revealScreen = document.getElementById('reveal-screen');
+    const dashboardWrapper = document.getElementById('dashboard-wrapper');
+    const particleZone = document.getElementById('particle-zone');
+
+    // Cinematic Orchestration
+    if (enterTrigger && revealScreen && dashboardWrapper) {
+        // Automatically trigger animation after a short delay
+        setTimeout(() => {
+            // Generate Particle Explosion
+            if (particleZone) {
+                for(let i=0; i<40; i++) {
+                    const p = document.createElement('div');
+                    p.className = 'particle';
+                    
+                    // Random explosion vectors
+                    const angle = Math.random() * Math.PI * 2;
+                    const velocity = 80 + Math.random() * 200;
+                    const tx = Math.cos(angle) * velocity;
+                    const ty = Math.sin(angle) * velocity;
+                    const scale = 0.5 + Math.random() * 1.5;
+                    
+                    p.style.setProperty('--tx', `${tx}px`);
+                    p.style.setProperty('--ty', `${ty}px`);
+                    p.style.setProperty('--s', scale);
+                    
+                    particleZone.appendChild(p);
+                    
+                    // Trigger GPU transition next frame
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            p.classList.add('pop');
+                        });
+                    });
+                }
+            }
+
+            // Trigger Split Transition & Dashboard Entry
+            revealScreen.classList.add('active-reveal');
+            dashboardWrapper.classList.remove('hidden-initial');
+            dashboardWrapper.classList.add('active-reveal');
+
+            // Cleanup DOM
+            setTimeout(() => {
+                revealScreen.style.opacity = '0';
+                setTimeout(() => revealScreen.style.display = 'none', 500);
+            }, 1500);
+        }, 800); // Wait 800ms after load before starting sequence
+    }
 
     // State
     let isListening = false;
@@ -23,8 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let microphone;
     let audioStream = null;
     let animationId;
-    const volumeMeterContainer = document.getElementById('volume-meter-container');
-    const volumeMeter = document.getElementById('volume-meter');
+    const canvasMeter = document.getElementById('audio-meter');
 
     async function setupAudioContext() {
         try {
@@ -37,7 +86,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (!audioContext) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                audioContext = new AudioContextClass();
+            }
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
+            
             analyser = audioContext.createAnalyser();
             analyser.smoothingTimeConstant = 0.8;
             analyser.fftSize = 1024;
@@ -45,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
             microphone = audioContext.createMediaStreamSource(audioStream);
             microphone.connect(analyser);
             
-            if (volumeMeterContainer) volumeMeterContainer.style.display = 'block';
+            if (canvasMeter) canvasMeter.style.display = 'block';
             updateVolumeMeter();
 
         } catch (err) {
@@ -54,22 +110,47 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateVolumeMeter() {
-        if (!analyser) return;
+        if (!analyser || !canvasMeter) return;
         const array = new Uint8Array(analyser.frequencyBinCount);
         analyser.getByteFrequencyData(array);
-        let values = 0;
-        for (let i = 0; i < array.length; i++) {
-            values += array[i];
-        }
-        let average = values / array.length;
-        let percentage = Math.min(100, Math.round((average / 128) * 100));
         
-        if (volumeMeter) {
-            volumeMeter.style.width = percentage + '%';
-            if (percentage > 70) volumeMeter.style.background = 'var(--danger)';
-            else if (percentage > 30) volumeMeter.style.background = 'var(--primary)';
-            else volumeMeter.style.background = 'var(--success)';
+        const ctx = canvasMeter.getContext('2d');
+        const width = canvasMeter.width;
+        const height = canvasMeter.height;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        const numBars = 5;
+        const barWidth = 4;
+        const gap = 3;
+        const totalWidth = (numBars * barWidth) + ((numBars - 1) * gap);
+        const startX = (width - totalWidth) / 2;
+        
+        // We only care about the lower frequencies for human voice (e.g. first 1/4 of the array)
+        const activeArrayLength = Math.floor(array.length / 4);
+        const chunkSize = Math.floor(activeArrayLength / numBars);
+        
+        for (let i = 0; i < numBars; i++) {
+            let sum = 0;
+            for(let j = 0; j < chunkSize; j++) {
+                sum += array[i * chunkSize + j];
+            }
+            let avg = sum / chunkSize;
+            // Boost low signals slightly for visual effect
+            let normalized = Math.min(1, (avg / 255) * 1.5);
+            let barHeight = Math.max(3, normalized * height);
+            
+            // Draw rounded bar
+            ctx.fillStyle = '#60a5fa'; // Blue accent
+            ctx.beginPath();
+            if (ctx.roundRect) {
+                ctx.roundRect(startX + i * (barWidth + gap), height - barHeight, barWidth, barHeight, 2);
+            } else {
+                ctx.fillRect(startX + i * (barWidth + gap), height - barHeight, barWidth, barHeight);
+            }
+            ctx.fill();
         }
+        
         animationId = requestAnimationFrame(updateVolumeMeter);
     }
 
@@ -83,8 +164,11 @@ document.addEventListener('DOMContentLoaded', () => {
             audioContext.close();
             audioContext = null;
         }
-        if (volumeMeterContainer) volumeMeterContainer.style.display = 'none';
-        if (volumeMeter) volumeMeter.style.width = '0%';
+        if (canvasMeter) {
+            canvasMeter.style.display = 'none';
+            const ctx = canvasMeter.getContext('2d');
+            ctx.clearRect(0, 0, canvasMeter.width, canvasMeter.height);
+        }
     }
 
     // Initialize Speech Recognition
@@ -128,8 +212,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 1500); // 1.5 seconds of silence triggers API
         }
 
-        // Update interim text display
-        interimTextDiv.textContent = interimTranscript;
+        // Update status text with interim text (or fallback to Listening)
+        if (interimTranscript) {
+            statusText.textContent = interimTranscript;
+        } else {
+            statusText.textContent = 'Listening...';
+        }
+        
         scrollToBottom(transcriptionBox);
     };
 
@@ -159,15 +248,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const placeholder = transcriptionBox.querySelector('.placeholder-text');
         if (placeholder) placeholder.remove();
 
-        // Create new text node for final transcript without overwriting interim div
+        // Create new text node for final transcript
         let p = document.createElement('p');
         p.textContent = finalTranscript;
         
         // Rebuild transcription box
         transcriptionBox.innerHTML = '';
         transcriptionBox.appendChild(p);
-        transcriptionBox.appendChild(interimTextDiv);
-        interimTextDiv.textContent = ''; // clear interim
     }
 
     function scrollToBottom(element) {
@@ -183,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
             isListening = true;
             
             // Update UI
-            toggleListenBtn.classList.add('listening');
+            toggleListenBtn.classList.add('is-listening');
             btnText.textContent = 'Stop Listening';
             micIcon.setAttribute('data-lucide', 'square');
             lucide.createIcons();
@@ -194,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             finalTranscript = '';
             lastProcessedText = '';
-            transcriptionBox.innerHTML = '<div id="interim-text" class="interim"></div>';
+            transcriptionBox.innerHTML = '';
             suggestionBox.innerHTML = '<p class="placeholder-text">Listening for context...</p>';
             
         } catch (e) {
@@ -209,7 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (silenceTimer) clearTimeout(silenceTimer);
         
         // Update UI
-        toggleListenBtn.classList.remove('listening');
+        toggleListenBtn.classList.remove('is-listening');
         btnText.textContent = 'Start Listening';
         micIcon.setAttribute('data-lucide', 'mic');
         lucide.createIcons();
@@ -217,7 +304,6 @@ document.addEventListener('DOMContentLoaded', () => {
         recordingPulse.classList.remove('active');
         statusText.textContent = 'Ready to Listen';
         statusText.style.color = 'var(--text-primary)';
-        interimTextDiv.textContent = '';
         
         // Process anything left
         if (finalTranscript.trim() && finalTranscript !== lastProcessedText) {
@@ -266,10 +352,14 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Hide processing indicator once streaming starts
             processingIndicator.classList.remove('active');
+            p.classList.add('streaming-text'); // Append pulsing cursor
 
             while (true) {
                 const { done, value } = await reader.read();
-                if (done) break;
+                if (done) {
+                    p.classList.remove('streaming-text'); // Remove cursor
+                    break;
+                }
                 
                 const chunk = decoder.decode(value, { stream: true });
                 // Append text and convert basic newlines to <br>
@@ -289,6 +379,8 @@ document.addEventListener('DOMContentLoaded', () => {
             suggestionBox.appendChild(placeholder);
         } finally {
             processingIndicator.classList.remove('active');
+            const p = suggestionBox.querySelector('p');
+            if (p) p.classList.remove('streaming-text');
         }
     }
 
